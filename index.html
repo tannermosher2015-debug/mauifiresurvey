@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member Survey — HFFA Local 1463 Maui Division</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── PASSWORD GATE ── -->
+  <div id="gate" class="gate-wrapper">
+    <div class="gate-header">
+      <div class="badge">Maui Fire Department Members</div>
+      <h1>Member Survey<br>Portal</h1>
+      <div class="org" style="margin-top:8px">HFFA Local 1463 · Maui Division</div>
+    </div>
+    <div class="gate-body">
+      <div class="card">
+        <h2>Member Access</h2>
+        <p>This survey portal is for Maui Fire Department members. Enter your member password to continue.</p>
+        <input type="password" id="pw-input" placeholder="Enter member password" onkeydown="if(event.key==='Enter') checkPw()" />
+        <div id="pw-error" class="error-msg hidden">Incorrect password. Please try again.</div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="checkPw()">
+          Access Portal →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HOME (after auth) ── -->
+  <div id="main" class="hidden">
+
+    <header class="site-header">
+      <div class="container">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div>
+            <div class="badge">All Members — Please Fill Out Your Survey</div>
+            <h1>Rank-for-Rank Recall<br>Member Surveys</h1>
+            <div class="org">HFFA Local 1463 · Maui Division</div>
+            <p class="tagline">R4R affects everyone — not just ranked members. Choose your survey below.</p>
+          </div>
+          <div class="nav-links">
+            <a href="results.html" class="nav-link-btn">Live Results</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container page-body">
+
+      <!-- Survey choices -->
+      <a href="survey.html" class="survey-choice survey-choice-ranked">
+        <div class="survey-choice-label">Ranked Members</div>
+        <div class="survey-choice-title">Firefighter II, FF III & Captain Survey →</div>
+        <div class="survey-choice-sub">R4R hours, the apparatus restriction, the TA double standard, and proposed changes.</div>
+      </a>
+
+      <a href="ff1-survey.html" class="survey-choice survey-choice-ff1">
+        <div class="survey-choice-label">Firefighter I</div>
+        <div class="survey-choice-title">Firefighter I Survey →</div>
+        <div class="survey-choice-sub">Your experience with R4R, crew safety, relocations, and whether the policy accounts for you.</div>
+      </a>
+
+      <!-- About section -->
+      <div class="card" style="margin-top:8px">
+        <h2>What these surveys are about</h2>
+        <p>The CBA guarantees every ranked member 288 hours of R4R opportunity per fiscal year. The department's current policy restricts that recall to the same apparatus class only. Here is what that means in practice:</p>
+
+        <div class="apparatus-chart">
+          <div class="chart-header">
+            <span>Apparatus</span>
+            <span>Accessible R4R Counterparts</span>
+          </div>
+          <div id="chart-rows"></div>
+          <div class="chart-legend">
+            <span><strong style="color:var(--navy)">Bold</strong> = accessible under current restriction</span>
+            <span style="color:var(--light)">/ total = exists but impractical</span>
+          </div>
+        </div>
+
+        <p>Nearly every FF III and Captain was trained through engine companies at some point. A FF I can TA to FF III on almost any apparatus. R4R affects the whole crew — including FF Is who may be relocated when ranked members work back-12 shifts. Both voices matter.</p>
+      </div>
+
+      <div class="notice-box notice-blue">
+        <strong>Both surveys are completely anonymous.</strong> No names, badge numbers, or identifying information are collected or stored.
+      </div>
+
+      <p class="meta-text">Each survey takes about 5 minutes · Results are visible to all members</p>
+
+    </main>
+  </div>
+
+  <script>
+    const APPARATUS = [
+      { name: "Engine",  accessible: 13, total: 14, note: null, zero: false },
+      { name: "Tanker",  accessible: 3,  total: 7,  note: "3 at remote/off-island stations (Hana, Lanai, Molokai)", zero: false },
+      { name: "BC Aid",  accessible: 5,  total: 6,  note: "Split 3 per battalion", zero: false },
+      { name: "Ladder",  accessible: 1,  total: 2,  note: "Single counterpart on the other side of the island", zero: false },
+      { name: "Hazmat",  accessible: 0,  total: 1,  note: "No counterparts exist anywhere in the county", zero: true },
+      { name: "Rescue",  accessible: 0,  total: 1,  note: "No counterparts exist anywhere in the county", zero: true },
+    ];
+
+    function checkPw() {
+      const val = document.getElementById("pw-input").value.trim().toLowerCase();
+      if (val === "mauifire") {
+        sessionStorage.setItem("r4r_auth", "1");
+        showMain();
+      } else {
+        document.getElementById("pw-error").classList.remove("hidden");
+        document.getElementById("pw-input").classList.add("input-error");
+      }
+    }
+
+    function showMain() {
+      document.getElementById("gate").classList.add("hidden");
+      document.getElementById("main").classList.remove("hidden");
+      buildChart();
+    }
+
+    function buildChart() {
+      const MAX = 13;
+      document.getElementById("chart-rows").innerHTML = APPARATUS.map((d) => {
+        const pct   = d.accessible === 0 ? 2 : Math.round((d.accessible / MAX) * 100);
+        const color = d.accessible === 0 ? "#C0392B" : "#162035";
+        const opacity = d.accessible === 0 ? "0.35" : "1";
+        const countHtml = d.accessible === 0
+          ? `<span style="color:var(--red);font-weight:700">0</span>`
+          : `<strong>${d.accessible}</strong><span class="of-total"> / ${d.total - 1}</span>`;
+        return `<div class="chart-row ${d.zero ? "chart-row-zero" : ""}">
+          <div class="chart-row-inner">
+            <div class="chart-label">${d.name}</div>
+            <div class="chart-bar-wrap"><div class="chart-bar" style="width:${pct}%;background:${color};opacity:${opacity}"></div></div>
+            <div class="chart-count ${d.zero ? "zero" : ""}">${countHtml}</div>
+          </div>
+          ${d.note ? `<div class="chart-note">${d.note}</div>` : ""}
+        </div>`;
+      }).join("");
+    }
+
+    if (sessionStorage.getItem("r4r_auth") === "1") showMain();
+  </script>
+</body>
+</html>

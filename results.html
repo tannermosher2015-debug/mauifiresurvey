@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Results — HFFA Local 1463 Maui Division</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/gate.js"></script>
+</head>
+<body>
+
+  <div class="results-header">
+    <div class="container">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="org" style="margin-bottom:4px">HFFA Local 1463 · Maui Division</div>
+          <h1>Live Survey Results</h1>
+          <div class="results-meta">
+            <span id="last-updated"></span>
+            &nbsp;·&nbsp;<a href="index.html">← Home</a>
+            &nbsp;·&nbsp;<a href="survey.html">Ranked Survey</a>
+            &nbsp;·&nbsp;<a href="ff1-survey.html">FF I Survey</a>
+          </div>
+        </div>
+        <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container page-body">
+
+    <!-- Response totals -->
+    <div class="summary-strip">
+      <div class="summary-card ranked-card">
+        <div id="count-ranked" class="summary-number">—</div>
+        <div class="summary-label">Ranked Members</div>
+      </div>
+      <div class="summary-card ff1-card">
+        <div id="count-ff1" class="summary-number">—</div>
+        <div class="summary-label">Firefighter Is</div>
+      </div>
+      <div class="summary-card total-card-sm">
+        <div id="count-total" class="summary-number">—</div>
+        <div class="summary-label">Total Responses</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:var(--light);margin-bottom:16px;font-style:italic">
+      Results are anonymous and view-only. Auto-refreshes every 60 seconds.
+    </div>
+
+    <!-- Rendered by results.js -->
+    <div id="results-container">
+      <div class="loading">Loading results...</div>
+    </div>
+
+  </main>
+
+  <script src="js/results.js"></script>
+</body>
+</html>
