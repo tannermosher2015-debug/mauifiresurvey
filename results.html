@@ -9,19 +9,22 @@
 </head>
 <body>
 
+  <nav class="portal-nav" aria-label="Survey portal">
+    <a href="index.html">Home</a>
+    <a href="survey.html">Ranked Survey</a>
+    <a href="ff1-survey.html">FF I Survey</a>
+    <a href="results.html" aria-current="page">Live Results</a>
+    <a href="survey_share.html">Share Results</a>
+    <a href="cba.html">CBA Reference</a>
+  </nav>
+
   <div class="results-header">
     <div class="container">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
           <div class="org" style="margin-bottom:4px">HFFA Local 1463 · Maui Division</div>
           <h1>Live Survey Results</h1>
-          <div class="results-meta">
-            <span id="last-updated"></span>
-            &nbsp;·&nbsp;<a href="index.html">← Home</a>
-            &nbsp;·&nbsp;<a href="cba.html">CBA Reference</a>
-            &nbsp;·&nbsp;<a href="survey.html">Ranked Survey</a>
-            &nbsp;·&nbsp;<a href="ff1-survey.html">FF I Survey</a>
-          </div>
+          <div class="results-meta"><span id="last-updated"></span></div>
         </div>
         <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
       </div>
