@@ -80,7 +80,22 @@ const SECTIONS = [
 
 let currentSection = 0;
 const answers = { surveyType: "ranked" };
-document.addEventListener("DOMContentLoaded", () => { renderSection(); });
+const DONE_KEY = "r4r_done_ranked";
+document.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem(DONE_KEY) === "1") { showAlready(); return; }
+  renderSection();
+});
+
+function showAlready() {
+  document.getElementById("survey-body").innerHTML =
+    `<div class="card" style="margin:18px auto;max-width:520px;text-align:center">
+      <h2>You've already submitted</h2>
+      <p>This device has already completed the ranked survey. Each member should submit once — thank you for your response.</p>
+      <a href="results.html" class="btn btn-primary" style="display:inline-block;margin-top:8px">View live results →</a>
+      <p style="margin-top:12px"><a href="index.html" style="color:var(--navy);text-decoration:underline">← Back to portal</a></p>
+    </div>`;
+  const nav = document.querySelector(".survey-nav"); if (nav) nav.style.display = "none";
+}
 
 function findQuestion(qid) {
   for (const sec of SECTIONS) { const q = sec.questions.find(q => q.id === qid); if (q) return q; }
@@ -218,7 +233,9 @@ async function submitSurvey() {
   btn.textContent = "Submitting..."; btn.disabled = true;
   try {
     const res = await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(answers) });
+    if (res.status === 429) { btn.textContent = "Submit Survey"; btn.disabled = false; alert("Too many submissions from this network right now. Please try again later, or from a different connection."); return; }
     if (!res.ok) throw new Error("failed");
+    localStorage.setItem(DONE_KEY, "1");
     window.location.href = "thanks.html";
   } catch { btn.textContent = "Submit Survey"; btn.disabled = false; alert("There was an error submitting. Please try again."); }
 }
