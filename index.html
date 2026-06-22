@@ -104,14 +104,24 @@
       { name: "Rescue",  accessible: 0,  total: 1,  note: "No counterparts exist anywhere in the county", zero: true },
     ];
 
-    function checkPw() {
-      const val = document.getElementById("pw-input").value.trim().toLowerCase();
-      if (val === "mauifire") {
-        sessionStorage.setItem("r4r_auth", "1");
-        showMain();
-      } else {
-        document.getElementById("pw-error").classList.remove("hidden");
-        document.getElementById("pw-input").classList.add("input-error");
+    async function checkPw() {
+      const val = document.getElementById("pw-input").value.trim();
+      const err = document.getElementById("pw-error");
+      try {
+        const res = await fetch("/api/results?check=1", { headers: { "x-member-pass": val } });
+        if (res.ok) {
+          sessionStorage.setItem("r4r_auth", "1");
+          sessionStorage.setItem("r4r_pass", val);
+          err.classList.add("hidden");
+          showMain();
+        } else {
+          err.textContent = "Incorrect password. Please try again.";
+          err.classList.remove("hidden");
+          document.getElementById("pw-input").classList.add("input-error");
+        }
+      } catch {
+        err.textContent = "Couldn't reach the server. Check your connection and try again.";
+        err.classList.remove("hidden");
       }
     }
 

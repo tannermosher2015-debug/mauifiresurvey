@@ -35,7 +35,8 @@ document.addEventListener("DOMContentLoaded", () => { loadResults(); setInterval
 
 async function loadResults() {
   try {
-    const res = await fetch("/api/results");
+    const res = await fetch("/api/results", { headers: { "x-member-pass": sessionStorage.getItem("r4r_pass") || "" } });
+    if (res.status === 401) { window.location.replace("index.html"); return; }
     if (!res.ok) throw new Error("failed");
     const data = await res.json();
     rankedData = data.ranked || []; ff1Data = data.ff1 || [];

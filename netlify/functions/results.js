@@ -21,14 +21,37 @@ const fetchByPrefix = async (prefix) => {
     .filter(Boolean);
 };
 
-exports.handler = async () => {
+const ALLOWED_ORIGINS = ["https://mauifirepulse.com", "https://www.mauifirepulse.com"];
+const corsOrigin = (event) => {
+  const o = event.headers && (event.headers.origin || event.headers.Origin);
+  return ALLOWED_ORIGINS.includes(o) ? o : ALLOWED_ORIGINS[0];
+};
+
+exports.handler = async (event) => {
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": corsOrigin(event),
+    "Access-Control-Allow-Headers": "Content-Type, x-member-pass",
     "Content-Type": "application/json",
   };
 
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
+
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Storage not configured." }) };
+  }
+
+  // ── Members-only gate ──
+  // Protection activates only once MEMBER_PASSWORD is set in Netlify env vars.
+  // Until then this behaves exactly as before (open) so deploying never locks members out.
+  const required = process.env.MEMBER_PASSWORD;
+  const provided = (event.headers && (event.headers["x-member-pass"] || event.headers["X-Member-Pass"])) || "";
+  if (required && provided !== required) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: "Members only — enter the member password." }) };
+  }
+
+  // Lightweight credential check for the login screen (no payload).
+  if (event.queryStringParameters && event.queryStringParameters.check) {
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
 
   try {
