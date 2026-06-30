@@ -145,7 +145,7 @@ function renderBarGroup(g, responses, n, fillCls) {
   const multiNote = g.isMulti ? `<span class="multi-note"> — select all that apply, % of ${base} respondents</span>` : "";
   const bars = counts.length === 0 ? `<p class="no-data">No responses yet</p>`
     : counts.map(([lbl, count]) => { const p = base > 0 ? Math.round((count/base)*100) : 0;
-      return `<div class="result-row"><div class="result-row-top"><span class="result-row-option">${lbl}</span><span class="result-row-count">${count} <span class="pct">(${p}%)</span></span></div><div class="bar-bg"><div class="bar-fill ${fillCls}" style="width:${p}%"></div></div></div>`;
+      return `<div class="result-row"><div class="result-row-top"><span class="result-row-option">${escHtml(lbl)}</span><span class="result-row-count">${count} <span class="pct">(${p}%)</span></span></div><div class="bar-bg"><div class="bar-fill ${fillCls}" style="width:${p}%"></div></div></div>`;
     }).join("");
   return `<div class="result-group"><div class="result-label">${g.label}${multiNote}</div>${bars}</div>`;
 }
