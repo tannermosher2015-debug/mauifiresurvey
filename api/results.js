@@ -1,3 +1,5 @@
+// Vercel serverless function — survey results (members-only). Ported from the
+// Netlify function; reads the same Upstash Redis keys, data untouched.
 const redis = async (...args) => {
   const res = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
     method: "POST",
@@ -22,22 +24,19 @@ const fetchByPrefix = async (prefix) => {
 };
 
 const ALLOWED_ORIGINS = ["https://mauifirepulse.com", "https://www.mauifirepulse.com"];
-const corsOrigin = (event) => {
-  const o = event.headers && (event.headers.origin || event.headers.Origin);
+const corsOrigin = (req) => {
+  const o = req.headers.origin;
   return ALLOWED_ORIGINS.includes(o) ? o : ALLOWED_ORIGINS[0];
 };
 
-exports.handler = async (event) => {
-  const headers = {
-    "Access-Control-Allow-Origin": corsOrigin(event),
-    "Access-Control-Allow-Headers": "Content-Type, x-member-pass",
-    "Content-Type": "application/json",
-  };
+module.exports = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", corsOrigin(req));
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-member-pass");
 
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Storage not configured." }) };
+    return res.status(500).json({ error: "Storage not configured." });
   }
 
   // ── Members-only gate (FAIL-CLOSED) ──
@@ -45,16 +44,16 @@ exports.handler = async (event) => {
   // them publicly. Once set, the caller must present the matching x-member-pass header.
   const required = process.env.MEMBER_PASSWORD;
   if (!required) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Results are not configured yet." }) };
+    return res.status(500).json({ error: "Results are not configured yet." });
   }
-  const provided = (event.headers && (event.headers["x-member-pass"] || event.headers["X-Member-Pass"])) || "";
+  const provided = req.headers["x-member-pass"] || "";
   if (provided !== required) {
-    return { statusCode: 401, headers, body: JSON.stringify({ error: "Members only. Enter the member password." }) };
+    return res.status(401).json({ error: "Members only. Enter the member password." });
   }
 
   // Lightweight credential check for the login screen (no payload).
-  if (event.queryStringParameters && event.queryStringParameters.check) {
-    return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+  if (req.query && req.query.check) {
+    return res.status(200).json({ ok: true });
   }
 
   try {
@@ -63,19 +62,15 @@ exports.handler = async (event) => {
       fetchByPrefix("ff1"),
     ]);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        ranked,
-        ff1,
-        totalRanked: ranked.length,
-        totalFF1: ff1.length,
-        total: ranked.length + ff1.length,
-      }),
-    };
+    return res.status(200).json({
+      ranked,
+      ff1,
+      totalRanked: ranked.length,
+      totalFF1: ff1.length,
+      total: ranked.length + ff1.length,
+    });
   } catch (err) {
     console.error("Results error:", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Could not load results. Please try again." }) };
+    return res.status(500).json({ error: "Could not load results. Please try again." });
   }
 };

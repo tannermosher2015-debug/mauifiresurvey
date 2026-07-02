@@ -1,3 +1,5 @@
+// Vercel serverless function — survey submission. Ported from the Netlify
+// function; storage stays in Upstash Redis (unchanged), data is untouched.
 const crypto = require("crypto");
 
 const RL_LIMIT = 8;      // max submissions per network (hashed IP) per window — generous so station-mates sharing one connection aren't blocked
@@ -49,64 +51,64 @@ const redis = async (...args) => {
 };
 
 const ALLOWED_ORIGINS = ["https://mauifirepulse.com", "https://www.mauifirepulse.com"];
-const corsOrigin = (event) => {
-  const o = event.headers && (event.headers.origin || event.headers.Origin);
+const corsOrigin = (req) => {
+  const o = req.headers.origin;
   return ALLOWED_ORIGINS.includes(o) ? o : ALLOWED_ORIGINS[0];
 };
-const clientIp = (event) => {
-  const h = event.headers || {};
-  return h["x-nf-client-connection-ip"] || (h["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+const clientIp = (req) => {
+  const h = req.headers;
+  return (h["x-forwarded-for"] || "").split(",")[0].trim() || h["x-real-ip"] || "unknown";
 };
 // One-way hash, used ONLY as an ephemeral rate-limit counter key — never stored with a response, so responses stay anonymous.
 const ipHash = (ip) => crypto.createHash("sha256").update("mfd:" + ip).digest("hex").slice(0, 16);
 
-exports.handler = async (event) => {
-  const headers = {
-    "Access-Control-Allow-Origin": corsOrigin(event),
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Content-Type": "application/json",
-  };
+module.exports = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", corsOrigin(req));
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
 
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Storage not configured. Add Upstash env vars in Netlify." }) };
+    return res.status(500).json({ error: "Storage not configured. Add Upstash env vars in Vercel." });
   }
 
   // Reject oversized payloads (junk / storage abuse)
-  if (event.body && event.body.length > 20000) {
-    return { statusCode: 413, headers, body: JSON.stringify({ error: "Payload too large" }) };
+  if (Number(req.headers["content-length"] || 0) > 20000) {
+    return res.status(413).json({ error: "Payload too large" });
   }
 
-  let body;
-  try { body = JSON.parse(event.body || "{}"); } catch { return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid JSON" }) }; }
+  let body = req.body;
+  if (typeof body === "string") {
+    try { body = JSON.parse(body || "{}"); } catch { return res.status(400).json({ error: "Invalid JSON" }); }
+  }
+  body = body || {};
   if (body.surveyType !== "ranked" && body.surveyType !== "ff1") {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid surveyType" }) };
+    return res.status(400).json({ error: "Invalid surveyType" });
   }
   const type = body.surveyType;
 
   // ── Bot / flood limit: generous per-network cap. FAIL-CLOSED — if the limiter can't
   // be checked (Redis error) we reject rather than accept an unthrottled write. ──
   try {
-    const rlKey = `r4r:rl:${ipHash(clientIp(event))}`;
+    const rlKey = `r4r:rl:${ipHash(clientIp(req))}`;
     const count = await redis("INCR", rlKey);
     if (count === 1) await redis("EXPIRE", rlKey, RL_WINDOW);
     if (typeof count === "number" && count > RL_LIMIT) {
-      return { statusCode: 429, headers, body: JSON.stringify({ error: "Too many submissions from this network. Please try again later." }) };
+      return res.status(429).json({ error: "Too many submissions from this network. Please try again later." });
     }
   } catch (e) {
     console.error("Rate-limit check failed (rejecting submission):", e);
-    return { statusCode: 503, headers, body: JSON.stringify({ error: "Service temporarily unavailable. Please try again shortly." }) };
+    return res.status(503).json({ error: "Service temporarily unavailable. Please try again shortly." });
   }
 
   try {
     const key = `r4r:${type}:${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
     await redis("SET", key, JSON.stringify({ ...sanitize(body), surveyType: type, ts: new Date().toISOString() }));
-    return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    return res.status(200).json({ success: true });
   } catch (err) {
     console.error("Submit error:", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Could not save your response. Please try again." }) };
+    return res.status(500).json({ error: "Could not save your response. Please try again." });
   }
 };
