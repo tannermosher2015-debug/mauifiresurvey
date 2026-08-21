@@ -5,3 +5,8 @@
 # so an un-ignored graphify-out/ would publish a multi-MB graph.json + graph.html
 # to the live site. Added 2026-08-06 BEFORE the first graph was built.
 graphify-out/
+
+# Kept off the server: this repo publishes its ROOT, so a tracked CLAUDE.md
+# would be served live. Same reason as frontline-website, hffa-site,
+# early-bird-coffee and maui-food-truck-websites. Keep this line.
+CLAUDE.md
