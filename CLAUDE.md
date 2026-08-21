@@ -8,12 +8,17 @@ it the first time you work in this repo.
 Single-file static HTML/CSS/JS. No framework.
 
 ## Deploy target
-**Netlify** (`netlify.toml` present on disk).
+**Netlify project `mauifiresurvey`, live at `https://mauifirepulse.com`**
 
 ## Does a push publish?
-**UNCONFIRMED.** Netlify Git deploy publishes on push; a CLI/drop deploy does not.
-Which one this site uses was NOT determined from the repo. Check the Netlify site
-settings before pushing, and replace this line with YES or NO.
+**YES. A push to this repo publishes.** It carries a Netlify git webhook
+(`https://api.netlify.com/hooks/github`), so pushing builds and deploys the live site.
+Build and verify BEFORE you push.
+
+Settled 2026-08-21 by `gh api repos/<owner>/<repo>/hooks` across all 48 retrofitted repos,
+plus a check for a deploying GitHub Action. Control: `publicsafetyfactshawaii`, which is
+documented as auto-deploying, returned the Netlify hook, so the test detects git-linkage
+rather than silently returning empty.
 
 ## Remote
 `git@github.com:tannermosher2015-debug/mauifiresurvey.git`, branch `main`.
