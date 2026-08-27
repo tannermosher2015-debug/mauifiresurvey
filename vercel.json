@@ -1,5 +1,4 @@
 {
-  "_comment": "mauifiresurvey.vercel.app is a SHADOW: this repo is git-linked to BOTH Vercel and Netlify, so one push deploys twice, and the copy people are meant to use is mauifirepulse.com on Netlify. Everything here 301s to the real domain so there is only ever one live URL for union members. Netlify does not read vercel.json, so mauifirepulse.com is unaffected. To use this host again, delete the redirects block below.",
   "redirects": [
     {
       "source": "/(.*)",
